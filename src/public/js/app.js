@@ -1,46 +1,92 @@
-const messageList = document.querySelector("ul");
-const nickForm = document.querySelector("#nick");
-const messageForm = document.querySelector("#message");
-const socket = new WebSocket(`ws://${window.location.host}`);
+const socket = io();
 
-function makeMessage(type, payload) {
-    const msg = {type, payload};
-    return JSON.stringify(msg);
+const welcome = document.getElementById("welcom");
+const form = welcome.querySelector("form");
+const room = document.getElementById("room");
+
+room.hidden = true;
+
+let roomName;
+
+function addMessage(message) {
+    const ul = room.querySelector("ul");
+    const li = document.createElement("li");
+    li.innerText = message;
+    ul.appendChild(li);
 }
 
-socket.addEventListener("open", ()=> {
-    console.log("Connected to Server");
-});
+function ShowRoom() {
+    welcome.hidden = true;
+    room.hidden = false;
+    const h3 = room.querySelector("h3");
+    h3.innerHTML = `Room ${roomName}`;
 
-socket.addEventListener("message", (message)=> {
-    const li = document.createElement("li");
-    li.innerText = message.data;
-    messageList.append(li);
-});
+    const msgform = room.querySelector("#msg");
+    const nameForm = room.querySelector("#name");
+    msgform.addEventListener("submit", handleMessageSubmit);
+    nameForm.addEventListener("submit", handleNicnameSubmit);
+}
 
-socket.addEventListener("close", () => {
-    console.log("DisConnected to Server");
-});
-
-function handleSubmit(event) {
+function handleNicnameSubmit(event) {
     event.preventDefault();
-    const input = messageForm.querySelector("input");
-    socket.send(makeMessage("new_message", input.value));
-    
-    // 자신이 보낸 메시지 등록
-    const li = document.createElement("li");
-    li.innerText = `You: ${input.value}`;
-    messageList.append(li);
+
+    const input = room.querySelector("#name input");
+    const value = input.value;
+
+    socket.emit("nickname", value);
     input.value = "";
 }
 
-function handleNickSubmit(event) {
+function handleMessageSubmit(event) {
+    console.log("message send");
     event.preventDefault();
-    const input = nickForm.querySelector("input");
-    socket.send(makeMessage("nickname", input.value));
+
+    const input = room.querySelector("#msg input");
+    const value = input.value;
+    socket.emit("new_message", input.value, roomName, ()=> {
+        addMessage(`You: ${value}`);
+    });
+
     input.value = "";
 }
 
+function backendDone(msg) {
+    console.log(`The Backend says: ${msg}`);
+}
 
-messageForm.addEventListener("submit", handleSubmit);
-nickForm.addEventListener("submit", handleNickSubmit);
+function handleRoomSubmit(event) {
+    event.preventDefault();
+    const input = form.querySelector("input");
+    socket.emit("enter_room", input.value , ShowRoom);
+    roomName = input.value;
+    input.value = "";
+    console.log("enter room");
+}
+
+form.addEventListener("submit", handleRoomSubmit);
+
+socket.on("welcom", (user, newCount)=> {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${user} arrived!`);
+});
+
+socket.on("bye", (left, newCount)=> {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${left} left!`);
+});
+
+socket.on("new_message", addMessage);
+
+// 방 정보 갱신 메서드
+socket.on("room_change", (rooms)=> {
+    rooms.innerHTML = "";
+
+    const roomList = welcome.querySelector("ul");
+    rooms.forEach(room => {
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomList.append(li);
+    });
+});

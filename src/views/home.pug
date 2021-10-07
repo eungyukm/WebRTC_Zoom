@@ -10,11 +10,21 @@ html(lang="en")
         header 
             h1 It works!
         main 
-            form#nick
-                input(type="text", placeholder="choose a nickname", required)
-                button Save
-            ul
-            form#message
-                input(type="text", placeholder="write a msg", required)
-                button Send
+            div#welcom 
+                form
+                    input(placeholder="room name", required, type="text")
+                    button Enter Room
+                ul
+            div#room
+                h3
+                ul
+                form#name
+                    input(placeholder="nickname", required, type="text")
+                    button Save
+                form#msg
+                    input(placeholder="message", required, type="text")
+                    button Send
+                h4 Open Rooms: 
+                ul
+        script(src="/socket.io/socket.io.js") 
         script(src="/public/js/app.js") 
