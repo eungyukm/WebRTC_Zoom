@@ -8,23 +8,17 @@ html(lang="en")
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
     body 
         header 
-            h1 It works!
+            h1 Noom
         main 
-            div#welcom 
+            div#welcom
                 form
                     input(placeholder="room name", required, type="text")
-                    button Enter Room
-                ul
-            div#room
-                h3
-                ul
-                form#name
-                    input(placeholder="nickname", required, type="text")
-                    button Save
-                form#msg
-                    input(placeholder="message", required, type="text")
-                    button Send
-                h4 Open Rooms: 
-                ul
+                    button Enter room
+            div#call
+                div#myStream
+                    video#myFace(autoplay, playsinline, width="400", height="400")
+                    button#mute mute
+                    button#camera turn camera off
+                    select#cameras
         script(src="/socket.io/socket.io.js") 
         script(src="/public/js/app.js") 
