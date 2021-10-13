@@ -19,6 +19,7 @@ const wsServer = new Server(httpServer, {
     }
 });
 
+// Test
 instrument(wsServer, {
     auth: false
 });
