@@ -42,7 +42,7 @@ async function getMedia(deviceId) {
         video: { facingMode: "user"},
     };
     const cameraConstraints = {
-        audio:true,
+        audio: true,
         video: { deviceId: { exact: deviceId}},
     }
     try {
@@ -86,6 +86,15 @@ function handleCameraClick() {
 
 async function handleCameraChange() {
     await getMedia(camerasSelect.value);
+    if(myPeerConnection) {
+        const videoTrack = myStream.getVideoTracks()[0]
+        console.log(myPeerConnection.getSenders());
+        const videoSender = myPeerConnection
+            .getSenders()
+            .find((sender) => sender.track.kind == "video");
+        console.log("videoSender : " + videoSender);
+        videoSender.replaceTrack(videoTrack);
+    }
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
@@ -124,22 +133,48 @@ socket.on("welcome", async () => {
 
 socket.on("offer", async(offer) => {
     console.log(offer);
+    console.log("received the offer");
     myPeerConnection.setRemoteDescription(offer);
     const answer = await myPeerConnection.createAnswer();
     console.log(answer);
     myPeerConnection.setLocalDescription(answer);
     socket.emit("answer", answer, roomName);
+    console.log("sent the answer");
 });
 
 socket.on("answer", (answer) => {
+    console.log("received the answer");
     myPeerConnection.setRemoteDescription(answer);
+});
+
+socket.on("ice", ice=> {
+    console.log("received candidate");
+    myPeerConnection.addIceCandidate(ice);
 });
 
 // RTC Code
 function makeConnection() {
     myPeerConnection = new RTCPeerConnection();
     console.log(myStream.getTracks());
+    myPeerConnection.addEventListener("icecandidate", handleIce);
+    myPeerConnection.addEventListener("addstream", handleAddStream);
+
     myStream
         .getTracks()
         .forEach((track) => myPeerConnection.addTrack(track, myStream));
+}
+
+function handleIce(data) {
+    console.log("sent candidate");
+    socket.emit("ice", data.candidate, roomName);
+    console.log("got ice candidate");
+    console.log(data);
+}
+
+function handleAddStream(data) {
+    const peerFace = document.getElementById("peerFace");
+    peerFace.srcObject = data.stream;
+    console.log("got an stream from my peer");
+    console.log("Peer's Stream", data.stream);
+    console.log("My stream", myStream);
 }
